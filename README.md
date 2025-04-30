@@ -20,3 +20,4 @@ $ sudo apt install python3-pip
 # Model Zoo → Object Detection → YOLO11 → Quickstart
 # Study 'https://docs.ultralytics.com/guides/nvidia-jetson/#start-with-native-installation'
 
+<pre> ```bash # install_yolov8_env.sh sudo apt update sudo apt install python3-pip -y pip install -U pip ... ``` </pre>
