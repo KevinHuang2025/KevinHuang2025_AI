@@ -560,5 +560,5 @@ python3 benchmark.py
 ```bash
 git clone https://github.com/dusty-nv/jetson-containers
 bash jetson-containers/install.sh
-bash jetson-containers/packages/llm/mlc/benchmarks.sh
+bash jetson-containers/packages/llm/mlc/benchmark.sh
 ```
