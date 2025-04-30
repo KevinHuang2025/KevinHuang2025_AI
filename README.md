@@ -1,11 +1,11 @@
 # AOPEN_AI
-## Studying for NVidia Orin Solution
-## For JetPack6.2 versopm. running on AGX Orin, Orin NX, and Orin Nano series
-#### Study 'https://elinux.org/Jetson_Zoo'
-#### Model Zoo → Object Detection → YOLO11 → Quickstart
-#### Study 'https://docs.ultralytics.com/guides/nvidia-jetson/#start-with-native-installation'
+## - Studying for NVidia Orin Solution
+## - For JetPack6.2 versopm. running on AGX Orin, Orin NX, and Orin Nano series
+#### --- Study 'https://elinux.org/Jetson_Zoo'
+#### --- Model Zoo → Object Detection → YOLO11 → Quickstart
+#### --- Study 'https://docs.ultralytics.com/guides/nvidia-jetson/#start-with-native-installation'
 
-### #Setup Jetpack Environment
+### # Setup Jetpack Environment
 ```bash
 echo "🔄 Updating package lists..."
 sudo apt update
@@ -17,7 +17,7 @@ echo "⚠️ System will reboot to apply upgrades. Please re-run the second scri
 read -p "Press Enter to reboot..."
 sudo reboot
 ```
-#### After press "Enter" to do system reboot, then
+#### --- After press "Enter" to do system reboot, then
 
 ```bash
 echo "🧠 Installing NVIDIA JetPack..."
@@ -44,7 +44,7 @@ source ~/.bashrc
 echo "🔄 ~/.bashrc 已重新加載"
 ```
 
-### #Run JTOP
+### # Run JTOP
 ```bash
 echo "🐍 安裝 python3-pip..."
 sudo apt update
@@ -59,12 +59,12 @@ sudo pip3 install jetson-stats
 echo "✅ 安裝完成！你可以用以下指令查看 Jetson 狀態："
 echo "👉 sudo jtop"
 ```
-#### After install related API, then execute
+#### --- After install related API, then execute
 ```bash
 sudo jtop
 ```
 
-### #Run CPU and GPU performance test
+### # Run CPU and GPU performance test
 ```bash
 echo "🚀 設定 Jetson 為最高效能模式..."
 sudo nvpmodel -m 0
@@ -88,8 +88,8 @@ sudo ./gpu_burn 1000
 echo "✅ 測試完成。你可以使用 'htop' 或 'jtop' 觀察資源使用狀況。"
 ```
 
-### #Run yolo in USB camera
-#### Setup environment
+### # Run yolo in USB camera
+#### --- Setup environment
 ```bash
 echo "🔄 更新套件列表..."
 sudo apt update
@@ -126,7 +126,12 @@ pip3 install pycuda
 echo "✅ YOLOv8 + PyTorch 2.5 + ONNX 環境安裝完成！"
 ```
 
-#### using only 1 USB camera in pyton3
+#### --- using only 1 USB camera in pyton3
+#### --- make "1_USB_camera.py" file
+```bash
+gedit 1_USB_camera.py
+```
+#### --- copy following in "1_USB_camera.py" file 
 ```bash
 from ultralytics import YOLO
 import cv2
@@ -208,7 +213,17 @@ while cap.isOpened():
 cap.release()
 cv2.destroyAllWindows()
 ```
-#### using 3 USB camera in python3
+#### --- then execute
+```bash
+python3 1_USB_camera.py
+```
+
+#### --- using 3 USB camera in python3
+#### --- make "3_USB_camera.py" file
+```bash
+gedit 3_USB_camera.py
+```
+#### --- copy following in "3_USB_camera.py" file 
 ```bash
 from ultralytics import YOLO
 import cv2
@@ -287,6 +302,10 @@ while all([cam["cap"].isOpened() for cam in cameras]):
 for cam in cameras:
     cam["cap"].release()
 cv2.destroyAllWindows()
+```
+#### --- then execute
+```bash
+python3 3_USB_camera.py
 ```
 
 
