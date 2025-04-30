@@ -5,7 +5,7 @@
 #### Model Zoo → Object Detection → YOLO11 → Quickstart
 #### Study 'https://docs.ultralytics.com/guides/nvidia-jetson/#start-with-native-installation'
 
-### Setup Jetpack Environment
+### #Setup Jetpack Environment
 ```bash
 echo "🔄 Updating package lists..."
 sudo apt update
@@ -44,7 +44,7 @@ source ~/.bashrc
 echo "🔄 ~/.bashrc 已重新加載"
 ```
 
-### Run JTOP
+### #Run JTOP
 ```bash
 echo "🐍 安裝 python3-pip..."
 sudo apt update
@@ -64,3 +64,26 @@ echo "👉 sudo jtop"
 sudo jtop
 ```
 
+### #Run CPU and GPU performance test
+```bash
+echo "🚀 設定 Jetson 為最高效能模式..."
+sudo nvpmodel -m 0
+sudo jetson_clocks
+
+echo "🛠️ 下載並編譯 GPU 壓力測試工具..."
+git clone https://github.com/anseeto/jetson-gpu-burn.git
+cd jetson-gpu-burn
+make
+
+echo "🔥 啟動 CPU 壓力測試 (背景執行)..."
+sudo apt install -y stress
+stress -c $(nproc) &
+
+echo "⏳ 等待 3 秒後執行 GPU 壓力測試..."
+sleep 3
+
+echo "⚙️ 啟動 GPU 壓力測試（持續 1000 秒）..."
+sudo ./gpu_burn 1000
+
+echo "✅ 測試完成。你可以使用 'htop' 或 'jtop' 觀察資源使用狀況。"
+```
