@@ -508,7 +508,7 @@ df.columns = df.columns.str.strip()
 df['model'] = df['model'].str.replace('HF://dusty-nv/', '', regex=False)
 df['model'] = df['model'].str.replace('HF://mlc-ai/', '', regex=False)
 df['model'] = df['model'].str.replace('-q4f16_ft-MLC', '', regex=False)
-df['model'] = df['model'].str.replace('-q4f16_l-MLC', '', regex=False)
+df['model'] = df['model'].str.replace('-q4f16_1-MLC', '', regex=False)
 
 # 計算平均並依解碼率排序
 df_unique = df.groupby('model', as_index=False).mean(numeric_only=True)
@@ -520,29 +520,29 @@ y_pos = np.arange(n)
 
 fig, ax1 = plt.subplots(figsize=(12, n * 0.6))
 
-# 主軸：記憶體用量（紅色 bar）
-memory_pos = y_pos - 0.2
-ax1.barh(memory_pos, df_unique['memory'], height=0.35, color='lightcoral', label='Memory Usage (MB)')
-ax1.set_xlabel('Memory Usage (MB)', color='red')
-ax1.tick_params(axis='x', labelcolor='red')
+# 主軸：解碼率（藍色 bar）
+decode_pos = y_pos - 0.2
+ax1.barh(decode_pos, df_unique['decode_rate'], height=0.35, color='skyblue', label='Decode Rate (tokens/sec)')
+ax1.set_xlabel('Decode Rate (tokens/sec)', color='blue')
+ax1.tick_params(axis='x', labelcolor='blue')
 ax1.set_yticks(y_pos)
 ax1.set_yticklabels(models)
 ax1.invert_yaxis()
 
-# twin x 軸：解碼率（藍色 bar）
+# twin x 軸：記憶體用量（紅色 bar）
 ax2 = ax1.twiny()
-decode_pos = y_pos + 0.2
-ax2.barh(decode_pos, df_unique['decode_rate'], height=0.35, color='skyblue', label='Decode Rate (tokens/sec)')
-ax2.set_xlabel('Decode Rate (tokens/sec)', color='blue')
-ax2.tick_params(axis='x', labelcolor='blue')
-
-# 數值標籤（記憶體）
-for i, val in enumerate(df_unique['memory']):
-    ax1.text(val + 1, memory_pos[i], f'{val:.0f} MB', va='center', color='darkred')
+memory_pos = y_pos + 0.2
+ax2.barh(memory_pos, df_unique['memory'], height=0.35, color='lightcoral', label='Memory Usage (MB)')
+ax2.set_xlabel('Memory Usage (MB)', color='red')
+ax2.tick_params(axis='x', labelcolor='red')
 
 # 數值標籤（解碼率）
 for i, val in enumerate(df_unique['decode_rate']):
-    ax2.text(val + 1, decode_pos[i], f'{val:.0f} tokens/sec', va='center', color='navy')
+    ax1.text(val + 1, decode_pos[i], f'{val:.0f} tokens/sec', va='center', color='navy')
+
+# 數值標籤（記憶體）
+for i, val in enumerate(df_unique['memory']):
+    ax2.text(val + 1, memory_pos[i], f'{val:.0f} MB', va='center', color='darkred')
 
 # 標題與格式
 plt.title('Models comparison', pad=20)
