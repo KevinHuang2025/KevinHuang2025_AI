@@ -1,4 +1,4 @@
-# AOPEN_AI
+# Jetson_AI
 ## - Studying for NVidia Orin Solution
 ## - For JetPack6.2 versopm. running on AGX Orin, Orin NX, and Orin Nano series
 #### --- Study 'https://elinux.org/Jetson_Zoo'
