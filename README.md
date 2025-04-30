@@ -555,3 +555,10 @@ plt.show()
 ```bash
 python3 benchmark.py
 ```
+
+### # NVIDIA Jetson AI Lab - benchmark
+```bash
+git clone https://github.com/dusty-nv/jetson-containers
+bash jetson-containers/install.sh
+bash jetson-containers/packages/llm/mlc/benchmarks.sh
+```
