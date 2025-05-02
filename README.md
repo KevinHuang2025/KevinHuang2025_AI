@@ -43,7 +43,7 @@ fi
 source ~/.bashrc
 echo "🔄 ~/.bashrc 已重新加載"
 ```
-
+___
 ### # Run JTOP
 ```bash
 echo "🐍 安裝 python3-pip..."
@@ -63,7 +63,7 @@ echo "👉 sudo jtop"
 ```bash
 sudo jtop
 ```
-
+___
 ### # Run CPU and GPU performance test
 ```bash
 echo "🚀 設定 Jetson 為最高效能模式..."
@@ -87,7 +87,7 @@ sudo ./gpu_burn 1000
 
 echo "✅ 測試完成。你可以使用 'htop' 或 'jtop' 觀察資源使用狀況。"
 ```
-
+___
 ### # Run yolo in USB camera
 #### --- Setup environment
 ```bash
@@ -307,7 +307,7 @@ cv2.destroyAllWindows()
 ```bash
 python3 3_USB_camera.py
 ```
-
+___
 ### # Calculate TOPS by yolo
 #### --- Please refer "# Run yolo in USB camera" to setup environment
 #### --- make "TOPS.py" file
@@ -352,7 +352,7 @@ print(f"⚙️  Estimated TOPS: {tops:.2f} TOPS\n")
 ```bash
 python3 TOPS.py
 ```
-
+___
 ### # LLM benchmark
 #### --- setup LLM environment
 #### --- directly copy from "https://www.jetson-ai-lab.com/benchmarks.html"
@@ -555,7 +555,7 @@ plt.show()
 ```bash
 python3 benchmark.py
 ```
-
+___
 ### # NVIDIA Jetson AI Lab - benchmark
 ```bash
 git clone https://github.com/dusty-nv/jetson-containers
