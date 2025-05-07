@@ -307,6 +307,167 @@ cv2.destroyAllWindows()
 ```bash
 python3 3_USB_camera.py
 ```
+#### --- updat. 3 USB camera & performance(CPU/GPU/Temp/Memory/Power) in one window
+```bash
+import numpy as np
+import os
+import cv2
+import time
+import subprocess
+import threading
+from ultralytics import YOLO
+
+# 各攝影機對應模型（Detect、Segment、Pose）
+camera_configs = [
+    {"id": 0, "model_path": "yolo11n.pt", "model_name": "Detect"},
+    {"id": 2, "model_path": "yolo11n-seg.pt", "model_name": "Segment"},
+    {"id": 4, "model_path": "yolo11n-pose.pt", "model_name": "Pose"},
+]
+
+# 初始化攝影機與模型
+cameras = []
+for cfg in camera_configs:
+    cap = cv2.VideoCapture(cfg["id"])
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    model = YOLO(cfg["model_path"])
+    cameras.append({
+        "cap": cap,
+        "model": model,
+        "name": cfg["model_name"]
+    })
+
+# 初始化參數
+prev_time = time.time()
+fps = 0.0
+mirror = True  # 預設鏡像開啟
+
+canvas_width = 1280
+canvas_height = 960
+frame_width = canvas_width // 2
+frame_height = canvas_height // 2
+
+# 監控資料儲存與鎖
+monitor_data = {
+    "cpu": 0, 
+    "gpu": 0, 
+    "temp": 0.0,
+    "ram": "0/0MB",
+    "power": "0mW"
+}
+
+data_lock = threading.Lock()
+
+def parse_tegrastats(line):
+    try:
+        cpu_part = line.split("CPU [")[1].split("]")[0]
+        cpu_usages = [int(c.split("%@")[0]) for c in cpu_part.split(",") if "%@" in c]
+        cpu_avg = sum(cpu_usages) / len(cpu_usages)
+
+        gpu_part = line.split("GR3D_FREQ ")[1].split("%")[0]
+        gpu_usage = int(gpu_part.strip())
+
+        temp_part = line.split("gpu@")[1].split("C")[0]
+        gpu_temp = float(temp_part.strip())
+
+        ram_part = line.split("RAM ")[1].split("MB")[0]
+        ram_usage = ram_part.strip() + "MB"
+
+        power_part = line.split("VIN_SYS_5V0 ")[1].split("mW")[0]
+        power = power_part.strip() + "mW"
+
+        return cpu_avg, gpu_usage, gpu_temp, ram_usage, power
+    except Exception:
+        return 0, 0, 0.0, "0/0MB", "0mW"
+
+def tegrastats_monitor():
+    proc = subprocess.Popen(["/usr/bin/tegrastats"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    for line in proc.stdout:
+        cpu, gpu, temp, ram, power = parse_tegrastats(line)
+        with data_lock:
+            monitor_data["cpu"] = cpu
+            monitor_data["gpu"] = gpu
+            monitor_data["temp"] = temp
+            monitor_data["ram"] = ram
+            monitor_data["power"] = power
+
+# 啟動背景監控執行緒
+threading.Thread(target=tegrastats_monitor, daemon=True).start()
+
+# 主迴圈
+while all([cam["cap"].isOpened() for cam in cameras]):
+    frames = []
+    for cam in cameras:
+        success, frame = cam["cap"].read()
+        if not success:
+            frame = None
+        elif mirror:
+            frame = cv2.flip(frame, 1)
+        frames.append(frame)
+
+    if any(f is None for f in frames):
+        break
+
+    plotted_frames = []
+    for i, cam in enumerate(cameras):
+        results = cam["model"].predict(frames[i], verbose=False)
+        plotted = results[0].plot()
+        plotted = cv2.resize(plotted, (frame_width, frame_height))
+        plotted_frames.append(plotted)
+
+    curr_time = time.time()
+    instant_fps = 1.0 / (curr_time - prev_time)
+    fps = 0.9 * fps + 0.1 * instant_fps
+    prev_time = curr_time
+
+    main_canvas = np.zeros((canvas_height, canvas_width, 3), dtype=np.uint8)
+    positions = [(0, 0), (frame_width, 0), (0, frame_height)]
+
+    for i, frame in enumerate(plotted_frames):
+        fps_text = f"FPS: {fps:.2f} | Model: {cameras[i]['name']} | Mirror: {'ON' if mirror else 'OFF'}"
+        (text_width, _), _ = cv2.getTextSize(fps_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
+        x_text = int((frame.shape[1] - text_width) / 2)
+        y_text = 30
+        cv2.putText(frame, fps_text, (x_text, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        x, y = positions[i]
+        main_canvas[y:y+frame_height, x:x+frame_width] = frame
+
+    # 繪製右下角硬體監控圖
+    with data_lock:
+        cpu = monitor_data["cpu"]
+        gpu = monitor_data["gpu"]
+        temp = monitor_data["temp"]
+
+    monitor_img = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
+    bar_width = int((frame_width - 100) * 0.8)
+    x0 = 50
+
+    def draw_bar(img, label, value, y, color):
+        max_bar = int(bar_width * (value / 100))
+        cv2.putText(img, f"{label}: {value:.1f}%", (x0, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        cv2.rectangle(img, (x0, y), (x0 + bar_width, y + 20), (100, 100, 100), 2)
+        cv2.rectangle(img, (x0, y), (x0 + max_bar, y + 20), color, -1)
+
+    draw_bar(monitor_img, "CPU", cpu, 60, (0, 255, 255))
+    draw_bar(monitor_img, "GPU", gpu, 120, (0, 128, 255))
+    cv2.putText(monitor_img, f"Temp: {temp:.1f}C", (x0, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(monitor_img, f"RAM: {monitor_data['ram']}", (x0, 220), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+    cv2.putText(monitor_img, f"Power: {monitor_data['power']}", (x0, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+    main_canvas[frame_height:frame_height*2, frame_width:canvas_width] = monitor_img
+    cv2.imshow("Monitor:Detect-Segment-Pose", main_canvas)
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
+        break
+    elif key == ord('m'):
+        mirror = not mirror
+        print(f"[INFO] Mirror mode: {'ON' if mirror else 'OFF'}")
+
+for cam in cameras:
+    cam["cap"].release()
+cv2.destroyAllWindows()
+```
 ___
 ### # Calculate TOPS by yolo
 #### --- Please refer "# Run yolo in USB camera" to setup environment
