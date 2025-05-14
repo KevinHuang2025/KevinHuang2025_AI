@@ -1,0 +1,3 @@
+# Linux_commands
+## 查看某個插件有哪些版本
+### sudo apt-cache policy vsftpd
