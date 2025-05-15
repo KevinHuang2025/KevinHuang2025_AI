@@ -44,3 +44,9 @@ sudo apt clean
 ```bash
 sudo apt autoclean
 ```
+# NVIDIA Jetson
+## Jetson_release
+```bash
+sudo pip3 install -U jetson-stats
+jetson_release
+```
