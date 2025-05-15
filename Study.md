@@ -50,3 +50,5 @@ sudo apt autoclean
 sudo pip3 install -U jetson-stats
 jetson_release
 ```
+## Jetson Orin Nano 8G
+![image](https://github.com/user-attachments/assets/cfd8af4e-0716-48ef-a365-57bc2ffc047c)
