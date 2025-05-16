@@ -59,6 +59,17 @@ jetson_release
 ![image](https://github.com/user-attachments/assets/c4f1072a-2cb0-411b-953e-3788d86fd7a3)
 ![image](https://github.com/user-attachments/assets/1b09c171-eff4-4600-b07e-8c4f94411b39)
 
-
-
-
+___
+# LLM
+## 安裝 jetson-containers 工具
+```bash
+git clone https://github.com/dusty-nv/jetson-containers
+cd jetson-containers
+bash install.sh
+```
+## 啟動 Stable Diffusion Web UI 容器
+```bash
+./run.sh $(./autotag stable-diffusion-webui)
+```
+## 訪問 Web UI
+### 打開瀏覽器並訪問 http://localhost:7860
