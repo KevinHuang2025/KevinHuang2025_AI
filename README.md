@@ -543,6 +543,15 @@ python3 TOPS.py
 ___
 ### # LLM benchmark
 #### --- setup LLM environment
+```bash
+sudo apt update
+sudo apt install -y docker.io
+```
+```bash
+git clone https://github.com/dusty-nv/jetson-containers
+bash jetson-containers/install.sh
+bash jetson-containers/packages/llm/mlc/benchmarks.sh
+```
 #### --- directly copy from "https://www.jetson-ai-lab.com/benchmarks.html"
 ```bash
 #!/usr/bin/env bash
