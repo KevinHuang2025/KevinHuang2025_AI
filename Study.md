@@ -55,6 +55,7 @@ jetson_release
 ![image](https://github.com/user-attachments/assets/c56460f8-d36f-4d83-98c7-4cde01d70fd4)
 ## Jetson Orin Nano 8G - JetPack 6.2
 ![image](https://github.com/user-attachments/assets/78cb939f-ebf6-4869-afb6-2d4b0dc22c52)
+![image](https://github.com/user-attachments/assets/c14ad60d-f19a-4c95-a797-4810b3fb726a)
 
 
 
