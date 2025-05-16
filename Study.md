@@ -57,6 +57,8 @@ jetson_release
 ![image](https://github.com/user-attachments/assets/78cb939f-ebf6-4869-afb6-2d4b0dc22c52)
 ![image](https://github.com/user-attachments/assets/c14ad60d-f19a-4c95-a797-4810b3fb726a)
 ![image](https://github.com/user-attachments/assets/c4f1072a-2cb0-411b-953e-3788d86fd7a3)
+![image](https://github.com/user-attachments/assets/1b09c171-eff4-4600-b07e-8c4f94411b39)
+
 
 
 
