@@ -164,81 +164,73 @@ from ultralytics import YOLO
 import cv2
 import time
 
-# 模型檔案對應表
-model_paths = {
-    '1': "yolo11n.pt",        # 偵測模型
-    '2': "yolo11n-seg.pt",    # 分割模型
-    '3': "yolo11n-pose.pt",   # 姿態模型
-    '4': "yolo11n-cls.pt",    # 分類模型
+# 模型檔案
+models = {
+    'Detect': YOLO("yolo11n.pt"),
+    'Segment': YOLO("yolo11n-seg.pt"),
+    'Pose': YOLO("yolo11n-pose.pt"),
+    'Classify': YOLO("yolo11n-cls.pt"),
 }
-
-# 預設載入偵測模型
-model_key = '1'
-trt_model = YOLO(model_paths[model_key])
-current_model_name = "Detect"
 
 # 攝影機設定
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640) #960
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480) #540
 
 # 初始化參數
 prev_time = time.time()
 fps = 0.0
-mirror = True  # 預設鏡像開啟
+mirror = True  # 鏡像模式
 
 while cap.isOpened():
     success, frame = cap.read()
     if not success:
         break
 
-    # ✅ 鏡像處理
     if mirror:
         frame = cv2.flip(frame, 1)
 
-    # 計時
     start_time = time.time()
 
-    # 推論
-    results = trt_model.predict(frame, verbose=False)
-    plotted_frame = results[0].plot()
+    results_imgs = []
+    for name, model in models.items():
+        # 推論
+        results = model.predict(frame, verbose=False)
+        # 繪圖
+        img = results[0].plot()
 
-    # FPS 平滑計算
+        # 在左上角加入模型名稱
+        cv2.putText(img, f"{name}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+        results_imgs.append(img)
+
+    # 計算 FPS
     curr_time = time.time()
     instant_fps = 1.0 / (curr_time - prev_time)
     fps = 0.9 * fps + 0.1 * instant_fps
     prev_time = curr_time
 
-    # 顯示 FPS（中上方）
-    fps_text = f"FPS: {fps:.2f} | Model: {current_model_name} | Mirror: {'ON' if mirror else 'OFF'}"
-    (text_width, _), _ = cv2.getTextSize(fps_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
-    x = int((960 - text_width) / 2)
-    y = 30
-    cv2.putText(plotted_frame, fps_text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    # 合併影像（上下排）
+    top_row = cv2.hconcat(results_imgs[:2])
+    bottom_row = cv2.hconcat(results_imgs[2:])
+    final_display = cv2.vconcat([top_row, bottom_row])
+
+    # 顯示 FPS
+    fps_text = f"FPS: {fps:.2f} | Mirror: {'ON' if mirror else 'OFF'}"
+    cv2.putText(final_display, fps_text, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
 
     # 顯示畫面
-    cv2.imshow("YOLOv8 TensorRT Webcam Inference", plotted_frame)
+    cv2.imshow("YOLOv8 Multi-Model Inference", final_display)
 
-    # 鍵盤控制
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
         break
-    elif chr(key) in model_paths:
-        model_key = chr(key)
-        trt_model = YOLO(model_paths[model_key])
-        current_model_name = {
-            '1': "Detect",
-            '2': "Segment",
-            '3': "Pose",
-            '4': "Classify"
-        }[model_key]
-        print(f"[INFO] Switched to model: {current_model_name}")
     elif key == ord('m'):
         mirror = not mirror
         print(f"[INFO] Mirror mode: {'ON' if mirror else 'OFF'}")
 
 cap.release()
 cv2.destroyAllWindows()
+
 ```
 #### --- then execute
 ```bash
