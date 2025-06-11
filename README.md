@@ -153,7 +153,7 @@ pip3 install pycuda
 echo "✅ YOLOv8 + PyTorch 2.5 + ONNX 環境安裝完成！"
 ```
 
-#### --- using only 1 USB camera in pyton3
+#### --- using only 1 USB camera in python3
 #### --- make "1_USB_camera.py" file
 ```bash
 gedit 1_USB_camera.py
