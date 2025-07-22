@@ -110,3 +110,9 @@ jetson-containers run $(autotag ollama) /bin/ollama run mistral
 ```bash
 ollama run llama3.2:3b
 ```
+___
+# 中文輸入法
+```bash
+sudo apt update
+sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-config-qt fcitx5-frontend-gtk3
+```
