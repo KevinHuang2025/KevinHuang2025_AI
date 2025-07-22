@@ -110,6 +110,10 @@ jetson-containers run $(autotag ollama) /bin/ollama run mistral
 ```bash
 ollama run llama3.2:3b
 ```
+## Web UI
+```bash
+docker run -it --rm --network=host --add-host=host.docker.internal:host-gateway ghcr.io/open-webui/open-webui:main
+```
 ___
 # 中文輸入法
 ```bash
