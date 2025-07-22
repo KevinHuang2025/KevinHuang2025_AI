@@ -98,7 +98,7 @@ jetson-containers run --name ollama $(autotag ollama)
 # models cached under your user's home directory
 docker run --runtime nvidia -it -rm --network=host -v ~/ollama:/ollama -e OLLAMA_MODELS=/ollama dustynv/ollama:r36.2.0
 ```
-## Ollama Client
+## Ollama Client: mistral
 ```bash
 # if running inside the same container as launched above
 /bin/ollama run mistral
@@ -106,4 +106,7 @@ docker run --runtime nvidia -it -rm --network=host -v ~/ollama:/ollama -e OLLAMA
 # if launching a new container for the client in another terminal
 jetson-containers run $(autotag ollama) /bin/ollama run mistral
 ```
-
+## Ollama Client: llama3.2:3b
+```bash
+ollama run llama3.2:3b
+```
