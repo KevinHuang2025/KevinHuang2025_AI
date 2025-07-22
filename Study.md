@@ -73,3 +73,37 @@ bash install.sh
 ```
 ## 訪問 Web UI
 ### 打開瀏覽器並訪問 http://localhost:7860
+
+___
+# NVLLM
+## check NV containers
+```bash
+jetson-containers list
+```
+## Run NV LLM
+```bash
+jetson-containers run dustynv/stable-diffusion-webui:r36.2.0
+```
+## use browser to open "http://0.0.0.0:7860"
+## you can type txt to generate a photo now
+
+___
+# NVLLM
+## NV Ollama, https://hub.docker.com/r/dustynv/ollama
+## Ollama Server
+```bash
+# models cached under jetson-containers/data
+jetson-containers run --name ollama $(autotag ollama)
+
+# models cached under your user's home directory
+docker run --runtime nvidia -it -rm --network=host -v ~/ollama:/ollama -e OLLAMA_MODELS=/ollama dustynv/ollama:r36.2.0
+```
+## Ollama Client
+```bash
+# if running inside the same container as launched above
+/bin/ollama run mistral
+
+# if launching a new container for the client in another terminal
+jetson-containers run $(autotag ollama) /bin/ollama run mistral
+```
+
