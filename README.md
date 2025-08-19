@@ -752,7 +752,7 @@ bash jetson-containers/packages/llm/mlc/benchmark.sh
 python3 benchmark.py
 ```
 ___
-### # Fix Chromium Brower can open isue
+### # Fix Chromium Brower can not open isue
 #### --- hotfix
 ```bash
 snap download snapd --revision=24724
