@@ -116,6 +116,9 @@ docker run -it --rm --network=host --add-host=host.docker.internal:host-gateway 
 ```
 ___
 # 中文輸入法
+Need to check system environment, whole API is well download
+<img width="198" height="198" alt="image" src="https://github.com/user-attachments/assets/d9fd0580-4ddc-4299-816f-ccdb86c3461e" />
+
 ```bash
 sudo apt update
 sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-config-qt fcitx5-frontend-gtk3
