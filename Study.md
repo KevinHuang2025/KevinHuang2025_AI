@@ -114,6 +114,8 @@ ollama run llama3.2:3b
 ```bash
 sudo docker run -it --rm --network=host --add-host=host.docker.internal:host-gateway ghcr.io/open-webui/open-webui:main
 ```
+### You can then navigate your browser to http://JETSON_IP:8080, and create a fake account to login (these credentials are only stored locally)
+
 ___
 # 中文輸入法
 Need to check system environment, whole API is well download
@@ -123,4 +125,4 @@ Need to check system environment, whole API is well download
 sudo apt update
 sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-config-qt fcitx5-frontend-gtk3
 ```
-## You can then navigate your browser to http://JETSON_IP:8080, and create a fake account to login (these credentials are only stored locally)
+
