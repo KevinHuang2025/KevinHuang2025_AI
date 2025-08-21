@@ -741,7 +741,7 @@ ___
 ```bash
 git clone https://github.com/dusty-nv/jetson-containers
 bash jetson-containers/install.sh
-bash jetson-containers/packages/llm/mlc/benchmark.sh
+sudo bash jetson-containers/packages/llm/mlc/benchmark.sh
 ```
 #### --- then execute
 ```bash
