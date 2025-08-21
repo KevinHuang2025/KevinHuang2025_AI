@@ -736,10 +736,6 @@ ax2.grid(False)
 plt.tight_layout()
 plt.show()
 ```
-#### --- then execute
-```bash
-python3 benchmark.py
-```
 ___
 ### # NVIDIA Jetson AI Lab - benchmark
 ```bash
@@ -749,6 +745,7 @@ bash jetson-containers/packages/llm/mlc/benchmark.sh
 ```
 #### --- then execute
 ```bash
+sudo ./jetson-containers/packages/llm/mlc/benchmark.sh
 python3 benchmark.py
 ```
 ___
