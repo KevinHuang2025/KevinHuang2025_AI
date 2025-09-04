@@ -33,6 +33,7 @@ from ultralytics import YOLO
 from collections import deque, Counter
 import threading, queue
 import easyocr
+import torch
 
 # --- 初始化 YOLO (TensorRT engine) ---
 yolo = YOLO("license_plate_detector.engine")
@@ -53,77 +54,103 @@ threading.Thread(target=cam_reader, daemon=True).start()
 
 # --- OCR (EasyOCR with GPU, 單執行緒) ---
 reader = easyocr.Reader(["en"], gpu=True)
-ocr_queue = queue.Queue(maxsize=4)
+ocr_queue = queue.Queue(maxsize=16)
 ocr_results = {}
-
 plate_hist = {}
 
-def smooth_text(plate_id, raw, maxlen=8):
-    if plate_id not in plate_hist:
-        plate_hist[plate_id] = deque(maxlen=maxlen)
-    hist = plate_hist[plate_id]
+def smooth_text(track_id, raw, maxlen=32):
+    if track_id not in plate_hist:
+        plate_hist[track_id] = deque(maxlen=maxlen)
+    hist = plate_hist[track_id]
     hist.append(raw)
-    if not hist:
+
+    valid_hist = [s for s in hist if s]
+    if not valid_hist:
         return raw
-    cand = Counter(hist).most_common(1)[0][0]
-    if all(len(s) == len(cand) for s in hist):
+
+    cand = Counter(valid_hist).most_common(1)[0][0]
+    if all(len(s) == len(cand) for s in valid_hist):
         final = ""
         for i in range(len(cand)):
-            final += Counter(s[i] for s in hist).most_common(1)[0][0]
+            final += Counter(s[i] for s in valid_hist).most_common(1)[0][0]
         return final
     return cand
 
 def ocr_worker():
     while True:
         try:
-            plate_id, gray = ocr_queue.get()
-            if gray.size == 0:
+            batch = []
+            while not ocr_queue.empty() and len(batch) < 4:
+                track_id, gray = ocr_queue.get()
+                if gray is not None and gray.size > 0:
+                    batch.append((track_id, gray))
+
+            if not batch:
                 continue
-            text = reader.readtext(
-                gray,
-                detail=0,
-                allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            )
-            text = "".join(text)
-            text = smooth_text(plate_id, text)
-            ocr_results[plate_id] = text
+
+            # 批次 OCR
+            for track_id, gray in batch:
+                text = reader.readtext(
+                    gray,
+                    detail=0,
+                    allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                )
+                text = "".join(text).strip()
+                text = smooth_text(track_id, text)
+                ocr_results[track_id] = text
+
+            # 避免 CUDA 記憶體累積
+            torch.cuda.empty_cache()
+
         except Exception as e:
             print("OCR error:", e)
 
 threading.Thread(target=ocr_worker, daemon=True).start()
 
 # --- 主推論迴圈 ---
+cv2.namedWindow("Jetson Plate OCR", cv2.WINDOW_NORMAL)
+
 while True:
     if frame_queue.empty():
         continue
     frame = frame_queue.get()
 
-    results = yolo(frame, imgsz=640, device=0)
-    for r in results:
-        for i, b in enumerate(r.boxes.xyxy.cpu().numpy()):
-            h, w = frame.shape[:2]
-            x1, y1, x2, y2 = map(int, b[:4])
-            x1, y1 = max(0, x1), max(0, y1)
-            x2, y2 = min(w, x2), min(h, y2)
+    # ⚡ 使用 track=True 啟用 ByteTrack
+    results = yolo.track(frame, imgsz=640, device=0, persist=True, tracker="bytetrack.yaml")
 
-            if x2 <= x1 or y2 <= y1:
-                continue  # 無效框
+    if results[0].boxes.id is None:
+        continue
 
-            crop = frame[y1:y2, x1:x2]
-            gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    for box in results[0].boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
+        track_id = int(box.id.cpu().numpy())  # ByteTrack 的 ID
 
-            if not ocr_queue.full():
-                ocr_queue.put((i, gray))
+        h, w = frame.shape[:2]
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+        if x2 <= x1 or y2 <= y1:
+            continue
 
-            text = ocr_results.get(i, "")
+        crop = frame[y1:y2, x1:x2]
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, text, (x1, y1 - 8),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        if not ocr_queue.full():
+            try:
+                ocr_queue.put_nowait((track_id, gray))
+            except queue.Full:
+                pass
+
+        text = ocr_results.get(track_id, "")
+
+        # --- 繪製車牌框 + OCR 結果 ---
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame, f"ID:{track_id} {text}", (x1, y1 - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     cv2.imshow("Jetson Plate OCR", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cv2.destroyAllWindows()
+
 ```
