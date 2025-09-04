@@ -124,5 +124,6 @@ Need to check system environment, whole API is well download
 ```bash
 sudo apt update
 sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-config-qt fcitx5-frontend-gtk3
+sudo apt install fcitx5-chewing
 ```
 
