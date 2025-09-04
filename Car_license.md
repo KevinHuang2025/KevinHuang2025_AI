@@ -1,4 +1,31 @@
 # Study for Car License inspection
+## 安裝 EasyOCR
+```bash
+pip3 install easyocr
+```
+## 安裝 GUI 支援套件（適合你要在螢幕顯示）
+```bash
+sudo apt update
+sudo apt install -y libgtk2.0-dev pkg-config
+sudo apt install -y libcanberra-gtk-module libcanberra-gtk3-module
+```
+## 如果出現 NumPy 2.x / PyTorch 不相容 的錯誤，可以先降級：
+```bash
+pip3 install "numpy<2"
+```
+## 確認你安裝的 OpenCV 有 GUI 支援 (GTK+ 或 QT)。
+```bash
+sudo apt-get install libgtk-3-dev
+pip3 uninstall opencv-python opencv-python-headless -y
+pip3 install --no-cache-dir opencv-python==4.6.0.66
+```
+
+## 轉換模型到 TensorRT, 成功後會產生一個： license_plate_detector.engine
+```bash
+yolo export model=license_plate_detector.pt format=engine device=0
+```
+
+## Code
 ```bash
 import cv2
 import numpy as np
