@@ -155,3 +155,354 @@ cv2.destroyAllWindows()
 
 ```
 
+___
+# 🔧 訓練流程建議
+## 1. 解壓縮資料集, download "EnglishFnt.tgz"
+```bash
+cd /data
+tar -xvzf EnglishFnt.tgz
+```
+### 這些資料依字元類別編號存放。
+
+## 2. 轉成 PyTorch Dataset
+### 你可以寫一個 Dataset 類別，將這些字元影像轉成 label（A–Z, 0–9）。
+```bash
+import os
+import cv2
+from torch.utils.data import Dataset
+
+class EnglishFntDataset(Dataset):
+    def __init__(self, root, transform=None):
+        self.samples = []
+        self.transform = transform
+
+        for class_dir in sorted(os.listdir(root)):
+            class_path = os.path.join(root, class_dir)
+            if not os.path.isdir(class_path):
+                continue
+
+            # Sample001 → 0, Sample002 → 1, ...
+            class_id = int(class_dir.replace("Sample", "")) - 1
+
+            for fname in os.listdir(class_path):
+                if fname.endswith(".png"):
+                    path = os.path.join(class_path, fname)
+                    self.samples.append((path, class_id))
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        path, label = self.samples[idx]
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if self.transform:
+            img = self.transform(img)
+        return img, label
+
+
+# Label 對照表
+idx_to_char = (
+    [chr(i) for i in range(ord('A'), ord('Z')+1)] +   # 0-25 : A-Z
+    [chr(i) for i in range(ord('a'), ord('z')+1)] +   # 26-51 : a-z
+    [chr(i) for i in range(ord('0'), ord('9')+1)]     # 52-61 : 0-9
+)
+
+
+# 測試
+if __name__ == "__main__":
+    from torchvision import transforms
+
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+    ])
+
+    dataset = EnglishFntDataset("/home/aopen/data/English/Fnt", transform)
+    print("資料筆數:", len(dataset))
+    img, label = dataset[0]
+    print("第一筆標籤:", label, "字元:", idx_to_char[label])
+
+```
+
+## 3. Train 模型
+```bash
+import os
+import cv2
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, random_split
+from torchvision import transforms
+
+# =============== Dataset ===============
+class EnglishFntDataset(Dataset):
+    def __init__(self, root, transform=None):
+        self.samples = []
+        self.transform = transform
+
+        for class_dir in sorted(os.listdir(root)):
+            class_path = os.path.join(root, class_dir)
+            if not os.path.isdir(class_path):
+                continue
+            class_id = int(class_dir.replace("Sample", "")) - 1
+            for fname in os.listdir(class_path):
+                if fname.endswith(".png"):
+                    path = os.path.join(class_path, fname)
+                    self.samples.append((path, class_id))
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        path, label = self.samples[idx]
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if self.transform:
+            img = self.transform(img)
+        return img, label
+
+
+# =============== Model ===============
+class OCRNet(nn.Module):
+    def __init__(self, num_classes=62):
+        super(OCRNet, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 32, 3, padding=1),  # (1,32,32) -> (32,32,32)
+            nn.ReLU(),
+            nn.MaxPool2d(2),                 # (32,16,16)
+
+            nn.Conv2d(32, 64, 3, padding=1), # (64,16,16)
+            nn.ReLU(),
+            nn.MaxPool2d(2),                 # (64,8,8)
+
+            nn.Conv2d(64, 128, 3, padding=1),# (128,8,8)
+            nn.ReLU(),
+            nn.MaxPool2d(2),                 # (128,4,4)
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(128 * 4 * 4, 256),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(256, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+
+
+# =============== Training ===============
+def train():
+    # 路徑
+    data_root = "/home/aopen/data/English/Fnt"
+
+    # Transform
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    # Dataset
+    dataset = EnglishFntDataset(data_root, transform)
+
+    # Train / Val split (9:1)
+    train_size = int(0.9 * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4)
+
+    # Model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = OCRNet(num_classes=62).to(device)
+
+    # Loss / Optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    # Training loop
+    epochs = 10
+    for epoch in range(epochs):
+        model.train()
+        running_loss, correct, total = 0.0, 0, 0
+
+        for imgs, labels in train_loader:
+            imgs, labels = imgs.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(imgs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+        train_acc = 100 * correct / total
+
+        # Validation
+        model.eval()
+        val_correct, val_total = 0, 0
+        with torch.no_grad():
+            for imgs, labels in val_loader:
+                imgs, labels = imgs.to(device), labels.to(device)
+                outputs = model(imgs)
+                _, predicted = torch.max(outputs, 1)
+                val_total += labels.size(0)
+                val_correct += (predicted == labels).sum().item()
+        val_acc = 100 * val_correct / val_total
+
+        print(f"Epoch [{epoch+1}/{epochs}] "
+              f"Loss: {running_loss/len(train_loader):.4f} "
+              f"Train Acc: {train_acc:.2f}% "
+              f"Val Acc: {val_acc:.2f}%")
+
+    # Save model
+    torch.save(model.state_dict(), "ocr_englishfnt.pth")
+    print("模型已儲存為 ocr_englishfnt.pth")
+
+
+if __name__ == "__main__":
+    train()
+
+```
+
+## 強化版 train.py
+### 換 ResNet18（最有效）
+### 增加 epoch 到 30–50
+### 加 data augmentation（旋轉、平移、噪聲）
+```bash
+import os
+import cv2
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, random_split
+from torchvision import transforms, models
+
+# =============== Dataset ===============
+class EnglishFntDataset(Dataset):
+    def __init__(self, root, transform=None):
+        self.samples = []
+        self.transform = transform
+
+        for class_dir in sorted(os.listdir(root)):
+            class_path = os.path.join(root, class_dir)
+            if not os.path.isdir(class_path):
+                continue
+            class_id = int(class_dir.replace("Sample", "")) - 1
+            for fname in os.listdir(class_path):
+                if fname.endswith(".png"):
+                    path = os.path.join(class_path, fname)
+                    self.samples.append((path, class_id))
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        path, label = self.samples[idx]
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if self.transform:
+            img = self.transform(img)
+        return img, label
+
+
+# =============== Model ===============
+def build_resnet18(num_classes=62):
+    model = models.resnet18(weights=None)   # 不用 ImageNet 預訓練
+    model.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)  # 改成單通道
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    return model
+
+
+# =============== Training ===============
+def train():
+    # 路徑 (建議確認實際位置)
+    data_root = os.path.expanduser("~/data/English/Fnt")
+
+    # Transform + Augmentation
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((32, 32)),
+        transforms.RandomRotation(10),         # 隨機旋轉 ±10 度
+        transforms.RandomAffine(0, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # 平移 & 縮放
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    dataset = EnglishFntDataset(data_root, transform)
+
+    # Train / Val split (9:1)
+    train_size = int(0.9 * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4)
+
+    # Model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = build_resnet18(num_classes=62).to(device)
+
+    # Loss / Optimizer / Scheduler
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
+
+    # Training loop
+    epochs = 30
+    for epoch in range(epochs):
+        model.train()
+        running_loss, correct, total = 0.0, 0, 0
+
+        for imgs, labels in train_loader:
+            imgs, labels = imgs.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(imgs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+        train_acc = 100 * correct / total
+
+        # Validation
+        model.eval()
+        val_correct, val_total = 0, 0
+        with torch.no_grad():
+            for imgs, labels in val_loader:
+                imgs, labels = imgs.to(device), labels.to(device)
+                outputs = model(imgs)
+                _, predicted = torch.max(outputs, 1)
+                val_total += labels.size(0)
+                val_correct += (predicted == labels).sum().item()
+        val_acc = 100 * val_correct / val_total
+
+        scheduler.step()
+
+        print(f"Epoch [{epoch+1}/{epochs}] "
+              f"Loss: {running_loss/len(train_loader):.4f} "
+              f"Train Acc: {train_acc:.2f}% "
+              f"Val Acc: {val_acc:.2f}% "
+              f"LR: {scheduler.get_last_lr()[0]:.5f}")
+
+    # Save model
+    torch.save(model.state_dict(), "ocr_resnet18.pth")
+    print("✅ 模型已儲存為 ocr_resnet18.pth")
+
+
+if __name__ == "__main__":
+    train()
+```
