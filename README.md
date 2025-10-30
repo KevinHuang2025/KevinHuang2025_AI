@@ -7,6 +7,8 @@
 
 ### # Setup Jetpack Environment
 ```bash
+sudo apt-mark hold nvidia-l4t-kernel nvidia-l4t-kernel-dtbs nvidia-l4t-initrd nvidia-l4t-bootloader
+
 echo "🔄 Updating package lists..."
 sudo apt update
 
