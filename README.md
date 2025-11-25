@@ -760,3 +760,22 @@ sudo snap install snapd_24724.snap
 sudo snap refresh --hold snapd
 sudo reboot
 ```
+
+### # Check TPM
+```bash
+ls /dev/tpm*
+```
+#### 若看到：/dev/tpm0 與 /dev/tpmrm0 → 表示系統已啟動 TPM 2.0（fTPM）
+#### TPM2 Tools
+```bash
+sudo apt update
+sudo apt install tpm2-tools
+```
+#### TPM2 Test: 若無錯誤 → TPM 正常
+```bash
+sudo tpm2_selftest
+```
+#### TPM random number: 輸出 8 bytes 的隨機資料 → 表示 TPM 2.0 正常運作
+```bash
+sudo tpm2_getrandom 8
+```
