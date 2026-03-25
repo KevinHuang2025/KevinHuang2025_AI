@@ -73,7 +73,7 @@ openclaw onboard --skip-daemon
 ### 模型/身份驗證提供程序
 ### 基本 URL	http://127.0.0.1:8000/v1（保留預設設定）
 ### API金鑰	任何隨機字串（例如vllm-local），但不要留空。
-### 型號名稱	vLLM 所服務的確切模型名稱（例如nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4）
+### 型號名稱	vLLM 所服務的確切模型名稱（stelterlab/NVIDIA-Nemotron-3-Nano-30B-A3B-AWQ）
 ### 啟動網關
 ```bash
 nohup openclaw gateway run > /tmp/openclaw-gateway.log 2>&1 &
