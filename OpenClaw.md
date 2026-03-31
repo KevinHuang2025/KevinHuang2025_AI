@@ -82,3 +82,20 @@ nohup openclaw gateway run > /tmp/openclaw-gateway.log 2>&1 &
 ```bash
 openclaw channels status --probe
 ```
+# CODEX CLI
+## 登入 A 帳號後
+```bash
+cp ~/.codex/auth.json ~/.codex/auth-A.json
+```
+## 登入 B 帳號後
+```bash
+cp ~/.codex/auth.json ~/.codex/auth-B.json
+```
+## 切換
+```bash
+cp ~/.codex/auth-A.json ~/.codex/auth.json
+```
+## 自然拼音
+```bash
+fcitx5 &
+```
