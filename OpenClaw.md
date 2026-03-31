@@ -95,6 +95,10 @@ cp ~/.codex/auth.json ~/.codex/auth-B.json
 ```bash
 cp ~/.codex/auth-A.json ~/.codex/auth.json
 ```
+## Whatsapp auto switch
+```bash
+ codex-auth-switch next
+```
 ## 自然拼音
 ```bash
 fcitx5 &
