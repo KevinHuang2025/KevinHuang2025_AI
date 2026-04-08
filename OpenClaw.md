@@ -101,5 +101,7 @@ cp ~/.codex/auth-A.json ~/.codex/auth.json
 ```
 ## 自然拼音
 ```bash
+sudo apt update
+sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-config-qt
 fcitx5 &
 ```
