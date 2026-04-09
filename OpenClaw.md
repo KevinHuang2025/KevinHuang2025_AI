@@ -21,6 +21,8 @@ export HF_TOKEN=your_huggingface_token_here
 ```
 ## Nemotron 3 Nano 30B-A3B
 ### 步驟 1：使用 vLLM 提供本機模型
+#### VLLM 使用 stelterlab/NVIDIA-Nemotron-3-Nano-30B-A3B-AWQ
+#### Search provider 使用 Ollama Web Search / Gemini Search
 ```bash
 sudo docker run -it --rm --pull always \
     --runtime=nvidia --network host \
