@@ -34,7 +34,7 @@ sudo docker run -it --rm --pull always \
     bash -c "wget -q -O /tmp/nano_v3_reasoning_parser.py \
     --header=\"Authorization: Bearer \$HF_TOKEN\" \
     --gpu-memory-utilization 0.6 \
-    --max-model-len 65536 \
+    --max-model-len 32768 \
     --trust-remote-code \
     --enable-auto-tool-choice \
     --reasoning-parser nano_v3 \
