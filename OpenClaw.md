@@ -23,6 +23,7 @@ export HF_TOKEN=your_huggingface_token_here
 ### 步驟 1：使用 vLLM 提供本機模型
 #### VLLM 使用 stelterlab/NVIDIA-Nemotron-3-Nano-30B-A3B-AWQ
 #### Search provider 使用 Ollama Web Search / Gemini Search
+#### 修改 '--gpu-memory-utilization 0.6 \ --max-model-len 32768 \'
 ```bash
 sudo docker run -it --rm --pull always \
     --runtime=nvidia --network host \
