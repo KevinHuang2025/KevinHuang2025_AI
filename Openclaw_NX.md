@@ -55,7 +55,139 @@ Useful checks:
 If WhatsApp still replies with old behavior, send /reset again and retry.
 EOF
 ```
-### 跑完後到 WhatsApp 測
+### 新增 stats_prompt_context.py
+```bash
+"""
+Generate BOOTSTRAP.md from the local ad_stats.db so the OpenClaw main agent
+can answer short WhatsApp commands like `stats` and `recent` directly from
+fresh prompt context.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+from datetime import date
+from pathlib import Path
+
+
+WORKSPACE = Path("/home/aopen/.openclaw/workspace")
+DB_PATH = WORKSPACE / "ad_stats.db"
+BOOTSTRAP_PATH = WORKSPACE / "BOOTSTRAP.md"
+
+
+def normalize_float(value: float | None) -> float:
+    if value is None:
+        return 0.0
+    value = round(float(value), 1)
+    return 0.0 if abs(value) < 0.05 else value
+
+
+def get_summary(conn: sqlite3.Connection) -> dict:
+    today = date.today().isoformat()
+    row = conn.execute(
+        """
+        SELECT
+            COUNT(*) AS total,
+            SUM(gender='male'   AND age_group='adult')  AS male_adult,
+            SUM(gender='male'   AND age_group='minor')  AS male_minor,
+            SUM(gender='female' AND age_group='adult')  AS female_adult,
+            SUM(gender='female' AND age_group='minor')  AS female_minor,
+            AVG(gaze_secs) AS avg_gaze
+        FROM views
+        WHERE ts LIKE ?
+        """,
+        (today + "%",),
+    ).fetchone()
+    return {
+        "date": today,
+        "total": row[0] or 0,
+        "male_adult": row[1] or 0,
+        "male_minor": row[2] or 0,
+        "female_adult": row[3] or 0,
+        "female_minor": row[4] or 0,
+        "avg_gaze": normalize_float(row[5]),
+    }
+
+
+def get_recent(conn: sqlite3.Connection, limit: int = 5) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT ts, gender, age_group, age_est, ad_key, gaze_secs
+        FROM views
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    return [
+        {
+            "ts": row[0],
+            "gender": row[1],
+            "age_group": row[2],
+            "age_est": row[3],
+            "ad_key": row[4],
+            "gaze_secs": row[5],
+        }
+        for row in rows
+    ]
+
+
+def build_bootstrap(summary: dict, recent: list[dict]) -> str:
+    lines = [
+        "AUTO-GENERATED. DO NOT EDIT MANUALLY.",
+        "",
+        "WhatsApp command rules:",
+        "- If the user sends exactly `stats`, `today`, or `資料庫統計`, reply directly with the Today Summary block below.",
+        "- If the user sends exactly `recent` or `最近紀錄`, reply directly with the Recent Records block below.",
+        "- If the user sends exactly `help`, reply with: `可用指令：stats、today、recent、help`.",
+        "- These commands are explicit. Do not ask clarifying questions.",
+        "- Ignore prior conversation loops where `stats` was treated as repetitive or ambiguous.",
+        "- Do not mention `session_status` for these commands.",
+        "- Reply in Traditional Chinese and keep the answer short.",
+        "",
+        "Today Summary:",
+        f"資料庫統計 {summary['date']}",
+        f"總觀看: {summary['total']}",
+        f"男成人: {summary['male_adult']}",
+        f"男未成年: {summary['male_minor']}",
+        f"女成人: {summary['female_adult']}",
+        f"女未成年: {summary['female_minor']}",
+        f"平均注視: {summary['avg_gaze']} 秒",
+        "",
+        "Recent Records:",
+    ]
+    if not recent:
+        lines.append("最近觀看紀錄：無資料")
+    else:
+        lines.append("最近觀看紀錄")
+        for item in recent:
+            age = f"{item['age_est']:.0f}" if item["age_est"] is not None else "-"
+            gaze = f"{normalize_float(item['gaze_secs']):.1f}s"
+            lines.append(
+                f"{item['ts'].replace('T', ' ')} | {item['gender']} {item['age_group']} | age {age} | {item['ad_key']} | {gaze}"
+            )
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    if not DB_PATH.exists():
+        BOOTSTRAP_PATH.write_text("資料庫不存在，無法產生統計快照。\n", encoding="utf-8")
+        return
+
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        summary = get_summary(conn)
+        recent = get_recent(conn)
+    finally:
+        conn.close()
+
+    BOOTSTRAP_PATH.write_text(build_bootstrap(summary, recent), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
+```
+### 到 WhatsApp 測
 ```bash
   /reset
   stats
