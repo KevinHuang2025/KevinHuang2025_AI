@@ -126,4 +126,26 @@ sudo apt update
 sudo apt install fcitx5 fcitx5-chinese-addons fcitx5-config-qt fcitx5-frontend-gtk3
 sudo apt install fcitx5-chewing
 ```
-
+# WatchDog Timer
+## 暂时停用 systemd watchdog
+```bash
+sudo gedit /etc/systemd/system.conf.d/watchdog.conf
+```
+### modify from  120 sec to 0 sec
+```bash
+RuntimeWatchdogSec=0
+```
+### Execuit
+```bash
+sudo systemctl daemon-reexec
+systemctl show -p RuntimeWatchdogUSec
+```
+### will see 'RuntimeWatchdogUSec=0'
+### 确认设备已释放WDT
+```bash
+sudo lsof /dev/watchdog
+```
+### 触发自动重启
+```bash
+sudo sh -c 'exec 3>/dev/watchdog; echo test-start: $(date); sleep 180'
+```
