@@ -149,3 +149,30 @@ sudo lsof /dev/watchdog
 ```bash
 sudo sh -c 'exec 3>/dev/watchdog; echo test-start: $(date); sleep 180'
 ```
+# Modify Fan Control
+## smooth & quiet setting
+```bash
+sudo gedit /etc/nvfancontrol.conf
+```
+## modify
+```bash
+	FAN_PROFILE quiet {
+		#TEMP 	HYST	PWM	RPM
+		0	0	255	6000
+		10	0	255	6000
+		11	0	187	6000	#187 4000
+		31	0	128	6000	#187 4000
+		70	0 	64	3000	#0 0
+		105	0 	0 	0
+	}
+	FAN_PROFILE cool {
+		#TEMP 	HYST	PWM	RPM
+		0	0	255	6000
+		35	0	255	6000
+		70	0 	64	3000	#0 0
+		105	0 	0	0
+	}
+```
+```bash
+	KICKSTART_PWM 32	#64
+```
