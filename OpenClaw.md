@@ -133,3 +133,8 @@ export QT_IM_MODULE=fcitx
 export XMODIFIERS=@im=fcitx
 ~/.profile
 ```
+## openclaw 目錄變更
+```bash
+sudo chown -R aopen:aopen /home/aopen/.openclaw
+sudo chmod -R 755 /home/aopen/.openclaw
+```
