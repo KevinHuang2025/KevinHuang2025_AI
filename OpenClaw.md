@@ -138,3 +138,14 @@ export XMODIFIERS=@im=fcitx
 sudo chown -R aopen:aopen /home/aopen/.openclaw
 sudo chmod -R 755 /home/aopen/.openclaw
 ```
+## 重啟網關並驗證
+```bash
+# 殺掉舊網關
+pkill -f "openclaw gateway run"
+
+# 重新在背景啟動
+nohup openclaw gateway run > /tmp/openclaw-gateway.log 2>&1 &
+
+# 檢查狀態
+openclaw channels status --probe
+```
