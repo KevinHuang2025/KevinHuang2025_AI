@@ -40,10 +40,9 @@ nemoclaw dev2730 dashboard-url --quiet
 ```bash
 ollama pull gpt-oss:120b
 ```
-## 在另一个终端启动本地 Codex：
+## 在另一个终端启动本地 llm：
 ```bash
-cd ~/projects
-codex --oss -m gpt-oss:120b
+ollama serve
 ```
 ### 之后每次使用只需：--oss 表示 Codex 使用本机 Ollama；不使用云端模型。
 ```bash
