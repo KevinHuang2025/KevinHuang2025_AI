@@ -34,3 +34,20 @@ docker run --rm --runtime=nvidia nvidia/cuda:13.0.0-base-ubuntu24.04 nvidia-smi
 ```bash
 nemoclaw dev2730 dashboard-url --quiet
 ```
+# Install Codex Cli
+## Codex Cli
+## Switch to vllm
+```bash
+ollama pull gpt-oss:120b
+```
+## 在另一个终端启动本地 Codex：
+```bash
+cd ~/projects
+codex --oss -m gpt-oss:120b
+```
+### 之后每次使用只需：--oss 表示 Codex 使用本机 Ollama；不使用云端模型。
+```bash
+systemctl --user start ollama-local
+cd ~/projects
+codex --oss -m gpt-oss:120b
+```
